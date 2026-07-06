@@ -11,6 +11,7 @@
     --muted: #c0c0c0; --border: #e8e8e8; --accent: #0a0a0a;
     --must-dot: #0a0a0a; --maybe-dot: #999; --local-dot: #aaa;
     --done-text: #bbb; --radius-sm: 2px; --radius: 6px;
+    --del: #d94a4a;
   }
   body {
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -18,63 +19,86 @@
   }
   .app { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
 
-  header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
-  header .title-group h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 2px; }
-  header .title-group p { font-size: 13px; color: var(--dim); }
+  header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  header .title-group h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  header .title-group p { font-size: 13px; color: var(--dim); margin-top: 2px; }
 
-  .sync-status { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 4px; }
-  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: background 300ms ease; }
+  .top-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-top: 4px; font-size: 11px; color: var(--dim); }
+  .top-actions .sep { color: var(--border); }
+  .action-link { cursor: pointer; color: var(--dim); transition: color 120ms ease; background: none; border: 0; font-family: inherit; font-size: 11px; padding: 0; }
+  .action-link:hover { color: var(--ink); }
+  .action-link.active { color: var(--ink); font-weight: 500; }
+
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: background 300ms ease; display: inline-block; }
   .sync-dot.syncing { background: #f0a030; }
   .sync-dot.synced  { background: #3a9b50; }
   .sync-dot.error   { background: #d94a4a; }
 
-  .progress-wrap { margin-bottom: 24px; }
+  .progress-wrap { margin-bottom: 20px; }
   .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-bottom: 6px; }
   .progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
   .progress-fill { height: 100%; width: 0%; background: var(--ink); border-radius: 2px; transition: width 400ms cubic-bezier(0.16,1,0.3,1); }
 
-  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
   .tab { padding: 10px 16px; font-size: 12px; font-weight: 500; color: var(--dim); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; user-select: none; transition: color 120ms ease, border-color 120ms ease; background: none; border-top: 0; border-left: 0; border-right: 0; font-family: inherit; }
   .tab:hover { color: var(--ink); }
   .tab.active { color: var(--ink); border-bottom-color: var(--ink); }
 
   .mobile-view { display: block; }
-  .section { margin-bottom: 32px; }
-  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .section { margin-bottom: 28px; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
   .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .section-dot.must { background: var(--must-dot); }
   .section-dot.maybe { background: var(--maybe-dot); }
   .section-dot.local { background: var(--local-dot); }
   .section-title { font-size: 14px; font-weight: 600; }
-  .section-sub { font-size: 11px; color: var(--dim); margin-left: auto; }
 
   .item-list { display: flex; flex-direction: column; gap: 1px; }
-  .item { display: flex; align-items: baseline; gap: 8px; padding: 5px 8px; border-radius: var(--radius); cursor: pointer; transition: background 120ms ease; user-select: none; }
+  .item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: var(--radius); cursor: pointer; transition: background 120ms ease; user-select: none; }
   .item:hover { background: var(--surface); }
 
-  .item-cb { position: relative; width: 14px; height: 14px; flex-shrink: 0; margin-top: 3px; }
+  .item-cb { position: relative; width: 14px; height: 14px; flex-shrink: 0; }
   .item-cb input { position: absolute; opacity: 0; width: 0; height: 0; }
   .item-cb .box { display: block; width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); transition: background 150ms ease, border-color 150ms ease; }
   .item-cb .check { position: absolute; top: 1px; left: 3.5px; width: 5px; height: 8px; border: solid var(--bg); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) scale(0); opacity: 0; transition: transform 150ms cubic-bezier(0.16,1,0.3,1), opacity 100ms ease; }
   .item.checked .box { background: var(--ink); border-color: var(--ink); }
   .item.checked .check { transform: rotate(45deg) scale(1); opacity: 1; }
 
-  .item-label { font-size: 13px; line-height: 1.5; color: var(--ink); transition: color 150ms ease; }
+  .item-label { font-size: 13px; line-height: 1.5; color: var(--ink); transition: color 150ms ease; flex: 1; min-width: 0; }
   .item-label .note { font-size: 11px; color: var(--dim); margin-left: 4px; font-weight: 400; }
   .item.checked .item-label { color: var(--done-text); text-decoration: line-through; }
 
-  .item-tag { font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 3px; margin-left: auto; flex-shrink: 0; letter-spacing: 0.02em; opacity: 0.75; }
+  .item-del {
+    font-size: 14px; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 3px;
+    transition: color 120ms ease, background 120ms ease; flex-shrink: 0;
+    opacity: 0; pointer-events: none;
+  }
+  .item-del:hover { color: var(--del); background: rgba(217,74,74,0.08); }
+  .editing .item-del { opacity: 1; pointer-events: auto; }
+  .editing .item { cursor: default; }
+  .editing .item:hover { background: transparent; }
+  .editing .item-cb { cursor: default; }
+
+  .item-tag { font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 3px; flex-shrink: 0; letter-spacing: 0.02em; opacity: 0.75; }
   .item-tag.must-tag { background: var(--surface); color: var(--ink); }
   .item-tag.maybe-tag { background: var(--surface); color: var(--maybe-dot); }
   .item-tag.local-tag { background: var(--surface); color: var(--local-dot); }
+
+  .add-btn {
+    display: none; width: 100%; margin-top: 8px; padding: 8px; font-size: 12px; font-family: inherit;
+    border: 1px dashed var(--border); border-radius: var(--radius); background: none; color: var(--dim);
+    cursor: pointer; transition: color 120ms ease, border-color 120ms ease;
+  }
+  .add-btn:hover { color: var(--ink); border-color: var(--dim); }
+  .editing .add-btn { display: block; }
 
   .empty-state { text-align: center; padding: 48px 24px; color: var(--dim); font-size: 13px; }
   .empty-state.hidden { display: none; }
 
   .desktop-view { display: none; }
   .desktop-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
-  .col { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 0 12px; }
-  .col-header { display: flex; align-items: center; gap: 10px; padding: 0 16px 12px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .col { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 0 10px; }
+  .col-header { display: flex; align-items: center; gap: 10px; padding: 0 14px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
   .col-header .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .col-header .col-dot.must { background: var(--must-dot); }
   .col-header .col-dot.maybe { background: var(--maybe-dot); }
@@ -82,13 +106,13 @@
   .col-header h2 { font-size: 14px; font-weight: 600; }
   .col-header .col-count { font-size: 11px; color: var(--dim); margin-left: auto; }
   .col .item-list { gap: 0; }
-  .col .item { padding: 4px 16px; border-radius: 0; }
+  .col .item { padding: 4px 14px; border-radius: 0; }
   .col .item:hover { background: var(--surface); }
   .col .item-tag { display: none; }
-  .col .item-label .note { display: inline; }
-  .col-group { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; padding: 12px 16px 2px; margin-top: 4px; }
+  .col-group { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; padding: 10px 14px 2px; margin-top: 4px; }
+  .col .add-btn { margin: 8px 14px 4px; width: calc(100% - 28px); }
 
-  .desktop-progress { display: none; margin-bottom: 20px; }
+  .desktop-progress { display: none; margin-bottom: 16px; }
   .desktop-progress .progress-label { font-size: 11px; }
 
   @media (min-width: 900px) {
@@ -106,6 +130,8 @@
     .app { padding: 24px 16px 48px; }
     header .title-group h1 { font-size: 19px; }
     .tab { padding: 8px 12px; font-size: 11px; }
+    .item { padding: 8px 6px; }
+    .item-del { padding: 8px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .progress-fill { transition: none; }
@@ -120,34 +146,32 @@
   <header>
     <div class="title-group">
       <h1>中國實習 40 天 · 行李清單</h1>
-      <p>武漢 · 7/9 — 8/17 · 跨裝置同步勾選進度</p>
+      <p>武漢 · 7/9 — 8/17</p>
     </div>
-    <div class="sync-status" id="syncStatus">
+    <div class="top-actions" id="topActions">
       <span class="sync-dot" id="syncDot"></span>
       <span id="syncLabel">讀取中…</span>
-      <span style="margin:0 4px;color:var(--border)">|</span>
-      <span id="resetBtn" style="cursor:pointer;color:var(--dim);transition:color 120ms" onclick="if(confirm('確定重置所有進度？')){resetAllProgress()}">重置</span>
+      <span class="sep">|</span>
+      <button class="action-link" id="editToggleBtn">編輯</button>
+      <span class="sep">|</span>
+      <button class="action-link" id="resetBtn">重置</button>
     </div>
   </header>
 
   <div class="progress-wrap" id="mobileProgress">
     <div class="progress-label">
-      <span id="progressText">0 / 46 已完成</span>
+      <span id="progressText">0 / 0 已完成</span>
       <span id="progressPct">0%</span>
     </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
   </div>
 
   <div class="desktop-progress" id="desktopProgress">
     <div class="progress-label">
-      <span id="dProgressText">0 / 46 已完成</span>
+      <span id="dProgressText">0 / 0 已完成</span>
       <span id="dProgressPct">0%</span>
     </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="dProgressFill"></div>
-    </div>
+    <div class="progress-track"><div class="progress-fill" id="dProgressFill"></div></div>
   </div>
 
   <div class="tabs" role="tablist">
@@ -168,10 +192,14 @@
 
 <script>
 (function() {
+  // ── Config ──
   const API_URL = 'https://script.google.com/macros/s/AKfycbyUcrowrFtnzJ19UbXFhQ6dEMO3uVxdAnhjgoe1mrXio4-HClpwInt9f-LSgCxUQDEcmw/exec';
   const IS_VIEW_ONLY = window.location.search.includes('view');
+  const DATA_KEY = 'china_packing_data_v3';
+  const CHECKED_KEY = 'china_packing_checked_v3';
 
-  const DATA = [
+  // ── Data ──
+  let DATA = [
     { id: 'p1',  cat: 'must', group: '證件文件', label: '台胞證', note: '檢查有效期限' },
     { id: 'p2',  cat: 'must', group: '證件文件', label: '台灣護照', note: '備用／過境' },
     { id: 'p3',  cat: 'must', group: '證件文件', label: '台胞證影本 + 電子檔', note: '' },
@@ -220,55 +248,87 @@
     { id: 'l10', cat: 'local', group: '文具', label: '筆記本、筆', note: '便宜' },
   ];
 
-  const STORAGE_KEY = 'china_packing_v2';
+  // Load custom items from localStorage
+  try {
+    const saved = localStorage.getItem(DATA_KEY);
+    if (saved) { const d = JSON.parse(saved); if (Array.isArray(d) && d.length) DATA = d; }
+  } catch(e) {}
+
+  // ── State ──
   const checked = new Set();
+  try { const s = localStorage.getItem(CHECKED_KEY); if (s) JSON.parse(s).forEach(id => checked.add(id)); } catch(e) {}
   let currentFilter = 'all';
   let pendingSave = null;
+  let editing = false;
 
-  try { const s = JSON.parse(localStorage.getItem(STORAGE_KEY)); if (Array.isArray(s)) s.forEach(id => checked.add(id)); } catch(e) {}
+  // If view-only, also check ?edit param (to allow the owner to force edit mode)
+  const FORCE_EDIT = window.location.search.includes('edit');
 
+  // ── Next ID generator ──
+  function nextId(prefix) {
+    const existing = DATA.filter(d => d.id.startsWith(prefix)).map(d => parseInt(d.id.slice(1)) || 0);
+    return prefix + (existing.length ? Math.max(...existing) + 1 : 1);
+  }
+
+  // ── Persist DATA ──
+  function saveData() {
+    try { localStorage.setItem(DATA_KEY, JSON.stringify(DATA)); } catch(e) {}
+  }
+
+  // ── UI refs ──
   const syncDot = document.getElementById('syncDot');
   const syncLabel = document.getElementById('syncLabel');
-  function setSyncStatus(state, msg) { syncDot.className = 'sync-dot' + (state ? ' '+state : ''); syncLabel.textContent = msg; }
+  const editBtn = document.getElementById('editToggleBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  function setSync(state, msg) { syncDot.className = 'sync-dot' + (state ? ' '+state : ''); syncLabel.textContent = msg; }
 
   async function loadFromServer() {
     if (!API_URL || API_URL === 'YOUR_WEBAPP_URL_HERE') return;
-    setSyncStatus('syncing', '同步中…');
+    setSync('syncing', '同步中…');
     try {
       const r = await fetch(API_URL + '?t=' + Date.now());
       const d = await r.json();
       if (d.ids && Array.isArray(d.ids)) {
         checked.clear();
-        // 過濾掉任何非 item ID 的髒資料（如標題列字串）
-        d.ids.forEach(id => { if (/^[pml]\d+$/.test(id)) checked.add(id); });
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checked])); } catch(e) {}
-        setSyncStatus('synced', '已同步');
-      } else { setSyncStatus('synced', '已連線'); }
-    } catch(e) { setSyncStatus('error', '離線模式'); }
+        d.ids.forEach(id => { if (/^[pmlc]\d+$/.test(id)) checked.add(id); });
+        try { localStorage.setItem(CHECKED_KEY, JSON.stringify([...checked])); } catch(e) {}
+        setSync('synced', '已同步');
+      } else { setSync('synced', '已連線'); }
+    } catch(e) { setSync('error', '離線模式'); }
     renderAll();
   }
 
   async function saveToServer() {
     if (!API_URL || API_URL === 'YOUR_WEBAPP_URL_HERE') return;
-    setSyncStatus('syncing', '儲存中…');
+    setSync('syncing', '儲存中…');
     try {
       const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ ids: [...checked] }) });
-      const d = await r.json();
-      setSyncStatus(d.ok ? 'synced' : 'error', d.ok ? '已同步' : '儲存失敗');
-    } catch(e) { setSyncStatus('error', '離線模式'); }
+      const data = await r.json();
+      setSync(data.ok ? 'synced' : 'error', data.ok ? '已同步' : '儲存失敗');
+    } catch(e) { setSync('error', '離線模式'); }
   }
 
   function debouncedSave() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checked])); } catch(e) {}
+    try { localStorage.setItem(CHECKED_KEY, JSON.stringify([...checked])); } catch(e) {}
     if (pendingSave) clearTimeout(pendingSave);
     pendingSave = setTimeout(() => saveToServer(), 800);
   }
 
+  // ── Render helpers ──
+  const CAT_LABEL = { must:'必帶', maybe:'可帶可買', local:'當地買' };
+
   function itemHtml(d) {
     const ck = checked.has(d.id);
-    const t = { must:'必帶', maybe:'可帶可買', local:'當地買' };
-    return `<div class="item${ck?' checked':''}" data-id="${d.id}"><label class="item-cb"><input type="checkbox"${ck?' checked':''} aria-label="${d.label}"><span class="box"></span><span class="check"></span></label><span class="item-label">${d.label}${d.note?'<span class="note">· '+d.note+'</span>':''}</span><span class="item-tag ${d.cat}-tag">${t[d.cat]}</span></div>`;
+    return `<div class="item${ck?' checked':''}" data-id="${d.id}">
+      <label class="item-cb"><input type="checkbox"${ck?' checked':''} aria-label="${d.label}"><span class="box"></span><span class="check"></span></label>
+      <span class="item-label">${escHtml(d.label)}${d.note?'<span class="note">· '+escHtml(d.note)+'</span>':''}</span>
+      <span class="item-tag ${d.cat}-tag">${CAT_LABEL[d.cat]}</span>
+      <span class="item-del" data-del="${d.id}">✕</span>
+    </div>`;
   }
+
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function updateProgress() {
     const done = checked.size, total = DATA.length, pct = total ? Math.round(done/total*100) : 0;
@@ -277,25 +337,63 @@
     ['progressFill','dProgressFill'].forEach(id => { const el = document.getElementById(id); if(el) el.style.width = pct+'%'; });
   }
 
-  function bindClicks(root) {
+  function bindEvents(root) {
+    // Checkbox clicks
     root.querySelectorAll('.item').forEach(el => {
       el.addEventListener('click', function(e) {
-        if (IS_VIEW_ONLY) return;
+        if (editing || IS_VIEW_ONLY) return;
+        if (e.target.closest('.item-del')) return;
         if (e.target.tagName === 'INPUT') return;
         const inp = this.querySelector('input'); inp.checked = !inp.checked;
         this.classList.toggle('checked');
         toggle(this.dataset.id, inp.checked);
       });
       el.querySelector('input').addEventListener('change', function() {
-        if (IS_VIEW_ONLY) { this.checked = !this.checked; return; }
+        if (editing || IS_VIEW_ONLY) { this.checked = !this.checked; return; }
         el.classList.toggle('checked', this.checked);
         toggle(el.dataset.id, this.checked);
       });
+    });
+    // Delete buttons
+    root.querySelectorAll('.item-del').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (!editing) return;
+        const id = this.dataset.del;
+        const item = DATA.find(d => d.id === id);
+        if (!item) return;
+        if (!confirm('刪除「' + item.label + '」？')) return;
+        DATA = DATA.filter(d => d.id !== id);
+        checked.delete(id);
+        saveData();
+        saveToServer();
+        try { localStorage.setItem(CHECKED_KEY, JSON.stringify([...checked])); } catch(e) {}
+        renderAll();
+      });
+    });
+    // Add buttons
+    root.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', function() { showAddDialog(this.dataset.cat); });
     });
   }
 
   function toggle(id, v) { v ? checked.add(id) : checked.delete(id); updateProgress(); debouncedSave(); }
 
+  // ── Add dialog ──
+  function showAddDialog(cat) {
+    const label = prompt('新增項目名稱：');
+    if (!label || !label.trim()) return;
+    const note = prompt('備註（可略過）：');
+    const group = prompt('分類名稱（例如「衣物」「日用品」，留空則用預設）：') || '自訂';
+    const prefix = cat === 'must' ? 'c' : cat === 'maybe' ? 'c' : 'c';
+    const id = nextId(prefix);
+    DATA.push({ id, cat, group: group.trim(), label: label.trim(), note: note ? note.trim() : '' });
+    saveData();
+    saveToServer();
+    renderAll();
+  }
+
+  // ── Render ──
   function renderMobile() {
     const container = document.getElementById('mobileListContainer');
     const empty = document.getElementById('mobileEmpty');
@@ -304,12 +402,14 @@
     filtered.forEach(d => { if (!groups[d.group]) groups[d.group] = []; groups[d.group].push(d); });
     let html = '';
     Object.entries(groups).forEach(([gn, items]) => {
-      const cat = items[0].cat, cl = cat==='must'?'必帶':cat==='maybe'?'可帶可買':'當地買';
-      html += '<div class="section"><div class="section-header"><span class="section-dot '+cat+'"></span><span class="section-title">'+gn+'</span><span class="section-sub">'+cl+'</span></div><div class="item-list">'+items.map(d=>itemHtml(d)).join('')+'</div></div>';
+      const cat = items[0].cat;
+      html += '<div class="section"><div class="section-header"><span class="section-dot '+cat+'"></span><span class="section-title">'+escHtml(gn)+'</span></div><div class="item-list">'+items.map(d=>itemHtml(d)).join('')+'</div>';
+      if (editing) html += '<button class="add-btn" data-cat="'+cat+'">+ 新增到「'+CAT_LABEL[cat]+'」</button>';
+      html += '</div>';
     });
     container.innerHTML = html;
     empty.classList.toggle('hidden', filtered.length > 0);
-    bindClicks(container);
+    if (!IS_VIEW_ONLY) bindEvents(container);
   }
 
   function renderDesktop() {
@@ -321,34 +421,56 @@
       const groups = {};
       items.forEach(d => { if(!groups[d.group]) groups[d.group]=[]; groups[d.group].push(d); });
       html += '<div class="col"><div class="col-header"><span class="col-dot '+c.d+'"></span><h2>'+c.l+'</h2><span class="col-count">'+items.length+'</span></div><div class="item-list">';
-      Object.entries(groups).forEach(([gn,gi]) => { html += '<div class="col-group">'+gn+'</div>'; gi.forEach(d=>{html+=itemHtml(d);}); });
-      html += '</div></div>';
+      Object.entries(groups).forEach(([gn, gi]) => {
+        html += '<div class="col-group">'+escHtml(gn)+'</div>';
+        gi.forEach(d => { html += itemHtml(d); });
+      });
+      html += '</div>';
+      if (editing) html += '<button class="add-btn" data-cat="'+c.k+'">+ 新增</button>';
+      html += '</div>';
     });
     html += '</div>';
     root.innerHTML = html;
-    bindClicks(root);
+    if (!IS_VIEW_ONLY) bindEvents(root);
   }
 
   function renderAll() { renderMobile(); renderDesktop(); updateProgress(); }
 
+  // ── Reset ──
   function resetAllProgress() {
+    if (!confirm('確定重置所有進度？')) return;
     checked.clear();
-    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    try { localStorage.removeItem(CHECKED_KEY); } catch(e) {}
     saveToServer();
     renderAll();
   }
 
-  // 觀看模式：隱藏重置按鈕 + 加入提示文字
+  // ── Edit toggle ──
+  function toggleEdit() {
+    editing = !editing;
+    document.getElementById('app').classList.toggle('editing', editing);
+    editBtn.textContent = editing ? '完成編輯' : '編輯';
+    if (editing) editBtn.classList.add('active');
+    else editBtn.classList.remove('active');
+    renderAll();
+  }
+
+  // ── Init ──
   if (IS_VIEW_ONLY) {
-    document.getElementById('resetBtn').style.display = 'none';
+    resetBtn.style.display = 'none';
+    editBtn.style.display = 'none';
     var badge = document.createElement('span');
     badge.style.cssText = 'font-size:10px;color:#999;background:#f5f5f5;padding:1px 6px;border-radius:3px;margin-left:4px';
     badge.textContent = '唯讀';
-    document.getElementById('syncStatus').appendChild(badge);
-    // 隱藏 sync 指示器（唯讀不需要同步）
-    document.getElementById('syncDot').style.display = 'none';
-    document.getElementById('syncLabel').textContent = '檢視模式';
+    document.getElementById('topActions').appendChild(badge);
+    syncDot.style.display = 'none';
+    syncLabel.textContent = '檢視模式';
   }
+
+  if (FORCE_EDIT && !IS_VIEW_ONLY) { editing = true; document.getElementById('app').classList.add('editing'); editBtn.textContent = '完成編輯'; editBtn.classList.add('active'); }
+
+  editBtn.addEventListener('click', toggleEdit);
+  resetBtn.addEventListener('click', resetAllProgress);
 
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', function() {
