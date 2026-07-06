@@ -169,6 +169,7 @@
 <script>
 (function() {
   const API_URL = 'https://script.google.com/macros/s/AKfycbyUcrowrFtnzJ19UbXFhQ6dEMO3uVxdAnhjgoe1mrXio4-HClpwInt9f-LSgCxUQDEcmw/exec';
+  const IS_VIEW_ONLY = window.location.search.includes('view');
 
   const DATA = [
     { id: 'p1',  cat: 'must', group: '證件文件', label: '台胞證', note: '檢查有效期限' },
@@ -279,12 +280,14 @@
   function bindClicks(root) {
     root.querySelectorAll('.item').forEach(el => {
       el.addEventListener('click', function(e) {
+        if (IS_VIEW_ONLY) return;
         if (e.target.tagName === 'INPUT') return;
         const inp = this.querySelector('input'); inp.checked = !inp.checked;
         this.classList.toggle('checked');
         toggle(this.dataset.id, inp.checked);
       });
       el.querySelector('input').addEventListener('change', function() {
+        if (IS_VIEW_ONLY) { this.checked = !this.checked; return; }
         el.classList.toggle('checked', this.checked);
         toggle(el.dataset.id, this.checked);
       });
@@ -333,6 +336,18 @@
     try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
     saveToServer();
     renderAll();
+  }
+
+  // 觀看模式：隱藏重置按鈕 + 加入提示文字
+  if (IS_VIEW_ONLY) {
+    document.getElementById('resetBtn').style.display = 'none';
+    var badge = document.createElement('span');
+    badge.style.cssText = 'font-size:10px;color:#999;background:#f5f5f5;padding:1px 6px;border-radius:3px;margin-left:4px';
+    badge.textContent = '唯讀';
+    document.getElementById('syncStatus').appendChild(badge);
+    // 隱藏 sync 指示器（唯讀不需要同步）
+    document.getElementById('syncDot').style.display = 'none';
+    document.getElementById('syncLabel').textContent = '檢視模式';
   }
 
   document.querySelectorAll('.tab').forEach(tab => {
