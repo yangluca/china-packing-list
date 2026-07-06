@@ -238,7 +238,8 @@
       const d = await r.json();
       if (d.ids && Array.isArray(d.ids)) {
         checked.clear();
-        d.ids.forEach(id => checked.add(id));
+        // 過濾掉任何非 item ID 的髒資料（如標題列字串）
+        d.ids.forEach(id => { if (/^[pml]\d+$/.test(id)) checked.add(id); });
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checked])); } catch(e) {}
         setSyncStatus('synced', '已同步');
       } else { setSyncStatus('synced', '已連線'); }
