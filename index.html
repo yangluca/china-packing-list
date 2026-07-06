@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中國實習 40 天 — 行李清單</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --surface: #f5f5f5; --ink: #0a0a0a; --dim: #a0a0a0;
+    --muted: #c0c0c0; --border: #e8e8e8; --accent: #0a0a0a;
+    --must-dot: #0a0a0a; --maybe-dot: #999; --local-dot: #aaa;
+    --done-text: #bbb; --radius-sm: 2px; --radius: 6px;
+  }
+  body {
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  header .title-group h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 2px; }
+  header .title-group p { font-size: 13px; color: var(--dim); }
+
+  .sync-status { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 4px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: background 300ms ease; }
+  .sync-dot.syncing { background: #f0a030; }
+  .sync-dot.synced  { background: #3a9b50; }
+  .sync-dot.error   { background: #d94a4a; }
+
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-bottom: 6px; }
+  .progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: var(--ink); border-radius: 2px; transition: width 400ms cubic-bezier(0.16,1,0.3,1); }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 10px 16px; font-size: 12px; font-weight: 500; color: var(--dim); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; user-select: none; transition: color 120ms ease, border-color 120ms ease; background: none; border-top: 0; border-left: 0; border-right: 0; font-family: inherit; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .mobile-view { display: block; }
+  .section { margin-bottom: 32px; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .section-dot.must { background: var(--must-dot); }
+  .section-dot.maybe { background: var(--maybe-dot); }
+  .section-dot.local { background: var(--local-dot); }
+  .section-title { font-size: 14px; font-weight: 600; }
+  .section-sub { font-size: 11px; color: var(--dim); margin-left: auto; }
+
+  .item-list { display: flex; flex-direction: column; gap: 1px; }
+  .item { display: flex; align-items: baseline; gap: 8px; padding: 5px 8px; border-radius: var(--radius); cursor: pointer; transition: background 120ms ease; user-select: none; }
+  .item:hover { background: var(--surface); }
+
+  .item-cb { position: relative; width: 14px; height: 14px; flex-shrink: 0; margin-top: 3px; }
+  .item-cb input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .item-cb .box { display: block; width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); transition: background 150ms ease, border-color 150ms ease; }
+  .item-cb .check { position: absolute; top: 1px; left: 3.5px; width: 5px; height: 8px; border: solid var(--bg); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) scale(0); opacity: 0; transition: transform 150ms cubic-bezier(0.16,1,0.3,1), opacity 100ms ease; }
+  .item.checked .box { background: var(--ink); border-color: var(--ink); }
+  .item.checked .check { transform: rotate(45deg) scale(1); opacity: 1; }
+
+  .item-label { font-size: 13px; line-height: 1.5; color: var(--ink); transition: color 150ms ease; }
+  .item-label .note { font-size: 11px; color: var(--dim); margin-left: 4px; font-weight: 400; }
+  .item.checked .item-label { color: var(--done-text); text-decoration: line-through; }
+
+  .item-tag { font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 3px; margin-left: auto; flex-shrink: 0; letter-spacing: 0.02em; opacity: 0.75; }
+  .item-tag.must-tag { background: var(--surface); color: var(--ink); }
+  .item-tag.maybe-tag { background: var(--surface); color: var(--maybe-dot); }
+  .item-tag.local-tag { background: var(--surface); color: var(--local-dot); }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--dim); font-size: 13px; }
+  .empty-state.hidden { display: none; }
+
+  .desktop-view { display: none; }
+  .desktop-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+  .col { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 0 12px; }
+  .col-header { display: flex; align-items: center; gap: 10px; padding: 0 16px 12px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .col-header .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .col-header .col-dot.must { background: var(--must-dot); }
+  .col-header .col-dot.maybe { background: var(--maybe-dot); }
+  .col-header .col-dot.local { background: var(--local-dot); }
+  .col-header h2 { font-size: 14px; font-weight: 600; }
+  .col-header .col-count { font-size: 11px; color: var(--dim); margin-left: auto; }
+  .col .item-list { gap: 0; }
+  .col .item { padding: 4px 16px; border-radius: 0; }
+  .col .item:hover { background: var(--surface); }
+  .col .item-tag { display: none; }
+  .col .item-label .note { display: inline; }
+  .col-group { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; padding: 12px 16px 2px; margin-top: 4px; }
+
+  .desktop-progress { display: none; margin-bottom: 20px; }
+  .desktop-progress .progress-label { font-size: 11px; }
+
+  @media (min-width: 900px) {
+    .mobile-view { display: none; }
+    .progress-wrap { display: none; }
+    .tabs { display: none; }
+    .desktop-view { display: block; }
+    .desktop-progress { display: block; }
+  }
+  @media (max-width: 899px) {
+    .desktop-view { display: none; }
+    .desktop-progress { display: none; }
+  }
+  @media (max-width: 520px) {
+    .app { padding: 24px 16px 48px; }
+    header .title-group h1 { font-size: 19px; }
+    .tab { padding: 8px 12px; font-size: 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill { transition: none; }
+    .item .check, .item .box { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <header>
+    <div class="title-group">
+      <h1>中國實習 40 天 · 行李清單</h1>
+      <p>武漢 · 7/9 — 8/17 · 跨裝置同步勾選進度</p>
+    </div>
+    <div class="sync-status" id="syncStatus">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncLabel">讀取中…</span>
+    </div>
+  </header>
+
+  <div class="progress-wrap" id="mobileProgress">
+    <div class="progress-label">
+      <span id="progressText">0 / 46 已完成</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="desktop-progress" id="desktopProgress">
+    <div class="progress-label">
+      <span id="dProgressText">0 / 46 已完成</span>
+      <span id="dProgressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="dProgressFill"></div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-filter="all">全部</button>
+    <button class="tab" data-filter="must">必帶</button>
+    <button class="tab" data-filter="maybe">可帶可買</button>
+    <button class="tab" data-filter="local">當地買</button>
+  </div>
+
+  <div class="mobile-view" id="mobileView">
+    <div id="mobileListContainer"></div>
+    <div class="empty-state hidden" id="mobileEmpty">沒有符合條件的項目</div>
+  </div>
+
+  <div class="desktop-view" id="desktopView"></div>
+
+</div>
+
+<script>
+(function() {
+  const API_URL = 'https://script.google.com/macros/s/AKfycbyUcrowrFtnzJ19UbXFhQ6dEMO3uVxdAnhjgoe1mrXio4-HClpwInt9f-LSgCxUQDEcmw/exec';
+
+  const DATA = [
+    { id: 'p1',  cat: 'must', group: '證件文件', label: '台胞證', note: '檢查有效期限' },
+    { id: 'p2',  cat: 'must', group: '證件文件', label: '台灣護照', note: '備用／過境' },
+    { id: 'p3',  cat: 'must', group: '證件文件', label: '台胞證影本 + 電子檔', note: '' },
+    { id: 'p4',  cat: 'must', group: '證件文件', label: '2 吋大頭照 2–3 張', note: '' },
+    { id: 'p5',  cat: 'must', group: '證件文件', label: '實習合約／邀請函影本', note: '備查' },
+    { id: 'p6',  cat: 'must', group: '支付＆網路', label: '信用卡（Visa／Master）', note: '綁 Apple Pay 更好' },
+    { id: 'p7',  cat: 'must', group: '支付＆網路', label: '現金人民幣', note: '約 ¥1000 備用' },
+    { id: 'p8',  cat: 'must', group: '支付＆網路', label: '台灣金融卡', note: '可跨國提款' },
+    { id: 'p9',  cat: 'must', group: '支付＆網路', label: '中國門號 SIM 卡', note: '辦支付寶／微信必備' },
+    { id: 'p10', cat: 'must', group: '支付＆網路', label: '台灣門號留著收簡訊', note: '銀行驗證用' },
+    { id: 'p11', cat: 'must', group: '支付＆網路', label: 'VPN（翻牆軟體）', note: '先裝好並測試！' },
+    { id: 'p12', cat: 'must', group: '3C 電子', label: '手機 + 充電線 ×2', note: '' },
+    { id: 'p13', cat: 'must', group: '3C 電子', label: '筆電 + 充電器', note: '實習用' },
+    { id: 'p14', cat: 'must', group: '3C 電子', label: '行動電源', note: '<100Wh，標籤清楚，只能手提' },
+    { id: 'p15', cat: 'must', group: '3C 電子', label: '國際轉接頭', note: '中國兩腳扁插，台灣大部分通用' },
+    { id: 'p16', cat: 'must', group: '醫藥健康', label: '個人常備藥', note: '過敏藥、胃藥、止痛藥' },
+    { id: 'p17', cat: 'must', group: '醫藥健康', label: '處方藥 + 醫生證明', note: '如適用' },
+    { id: 'p18', cat: 'must', group: '醫藥健康', label: '口罩一盒', note: '備用' },
+    { id: 'm1',  cat: 'maybe', group: '衣物', label: 'T恤 ×5–7', note: '淘寶很便宜' },
+    { id: 'm2',  cat: 'maybe', group: '衣物', label: '長褲 ×2–3', note: '' },
+    { id: 'm3',  cat: 'maybe', group: '衣物', label: '短褲 ×2', note: '' },
+    { id: 'm4',  cat: 'maybe', group: '衣物', label: '薄外套 1–2 件', note: '7–8 月武漢很熱' },
+    { id: 'm5',  cat: 'maybe', group: '衣物', label: '睡衣', note: '當地買也可' },
+    { id: 'm6',  cat: 'maybe', group: '衣物', label: '內衣襪子（一週份）', note: '' },
+    { id: 'm7',  cat: 'maybe', group: '衣物', label: '正式服裝 1–2 套', note: '有正式場合建議台灣帶' },
+    { id: 'm8',  cat: 'maybe', group: '鞋子', label: '布鞋／運動鞋 1 雙', note: '穿過的比較舒服' },
+    { id: 'm9',  cat: 'maybe', group: '鞋子', label: '涼鞋／拖鞋 1 雙', note: '當地買即可' },
+    { id: 'm10', cat: 'maybe', group: '日用品', label: '毛巾、牙刷、牙膏', note: '旅行組先用，當地補' },
+    { id: 'm11', cat: 'maybe', group: '日用品', label: '吹風機', note: '先確認住宿有沒有' },
+    { id: 'm12', cat: 'maybe', group: '日用品', label: '摺疊傘', note: '武漢午後雷陣雨多' },
+    { id: 'm13', cat: 'maybe', group: '日用品', label: '洗衣袋 + 衣架', note: '' },
+    { id: 'm14', cat: 'maybe', group: '日用品', label: '保溫瓶／水壺', note: '台灣帶慣用的' },
+    { id: 'm15', cat: 'maybe', group: '個人保養', label: '簡單保養品', note: '' },
+    { id: 'm16', cat: 'maybe', group: '個人保養', label: '防曬乳', note: '當地買選擇多' },
+    { id: 'm17', cat: 'maybe', group: '個人保養', label: '隱形眼鏡 + 藥水', note: '台灣帶習慣品牌' },
+    { id: 'm18', cat: 'maybe', group: '個人保養', label: '眼鏡／太陽眼鏡', note: '台灣帶' },
+    { id: 'l1',  cat: 'local', group: '日用品補給', label: '衛生紙、濕紙巾', note: '佔空間，¥10 搞定' },
+    { id: 'l2',  cat: 'local', group: '日用品補給', label: '衣架、夾子', note: '淘寶湊包郵好物' },
+    { id: 'l3',  cat: 'local', group: '日用品補給', label: '收納盒／收納袋', note: '便宜選擇多' },
+    { id: 'l4',  cat: 'local', group: '日用品補給', label: '洗衣精／肥皂', note: '當地超市買' },
+    { id: 'l5',  cat: 'local', group: '日用品補給', label: '拖鞋', note: '¥15–20 就有' },
+    { id: 'l6',  cat: 'local', group: '日用品補給', label: '垃圾桶、小置物籃', note: '宿舍可能缺' },
+    { id: 'l7',  cat: 'local', group: '寢具', label: '枕頭套／床單', note: '若住宿沒提供，提前淘寶寄到宿舍' },
+    { id: 'l8',  cat: 'local', group: '零食飲品', label: '泡麵、餅乾、飲料', note: '中國零食選擇爆炸多' },
+    { id: 'l9',  cat: 'local', group: '零食飲品', label: '沖泡咖啡／茶包', note: '淘寶超便宜' },
+    { id: 'l10', cat: 'local', group: '文具', label: '筆記本、筆', note: '便宜' },
+  ];
+
+  const STORAGE_KEY = 'china_packing_v2';
+  const checked = new Set();
+  let currentFilter = 'all';
+  let pendingSave = null;
+
+  try { const s = JSON.parse(localStorage.getItem(STORAGE_KEY)); if (Array.isArray(s)) s.forEach(id => checked.add(id)); } catch(e) {}
+
+  const syncDot = document.getElementById('syncDot');
+  const syncLabel = document.getElementById('syncLabel');
+  function setSyncStatus(state, msg) { syncDot.className = 'sync-dot' + (state ? ' '+state : ''); syncLabel.textContent = msg; }
+
+  async function loadFromServer() {
+    if (!API_URL || API_URL === 'YOUR_WEBAPP_URL_HERE') return;
+    setSyncStatus('syncing', '同步中…');
+    try {
+      const r = await fetch(API_URL + '?t=' + Date.now());
+      const d = await r.json();
+      if (d.ids && Array.isArray(d.ids)) {
+        checked.clear();
+        d.ids.forEach(id => checked.add(id));
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checked])); } catch(e) {}
+        setSyncStatus('synced', '已同步');
+      } else { setSyncStatus('synced', '已連線'); }
+    } catch(e) { setSyncStatus('error', '離線模式'); }
+    renderAll();
+  }
+
+  async function saveToServer() {
+    if (!API_URL || API_URL === 'YOUR_WEBAPP_URL_HERE') return;
+    setSyncStatus('syncing', '儲存中…');
+    try {
+      const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ ids: [...checked] }) });
+      const d = await r.json();
+      setSyncStatus(d.ok ? 'synced' : 'error', d.ok ? '已同步' : '儲存失敗');
+    } catch(e) { setSyncStatus('error', '離線模式'); }
+  }
+
+  function debouncedSave() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checked])); } catch(e) {}
+    if (pendingSave) clearTimeout(pendingSave);
+    pendingSave = setTimeout(() => saveToServer(), 800);
+  }
+
+  function itemHtml(d) {
+    const ck = checked.has(d.id);
+    const t = { must:'必帶', maybe:'可帶可買', local:'當地買' };
+    return `<div class="item${ck?' checked':''}" data-id="${d.id}"><label class="item-cb"><input type="checkbox"${ck?' checked':''} aria-label="${d.label}"><span class="box"></span><span class="check"></span></label><span class="item-label">${d.label}${d.note?'<span class="note">· '+d.note+'</span>':''}</span><span class="item-tag ${d.cat}-tag">${t[d.cat]}</span></div>`;
+  }
+
+  function updateProgress() {
+    const done = checked.size, total = DATA.length, pct = total ? Math.round(done/total*100) : 0;
+    ['progressText','dProgressText'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = done+' / '+total+' 已完成'; });
+    ['progressPct','dProgressPct'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = pct+'%'; });
+    ['progressFill','dProgressFill'].forEach(id => { const el = document.getElementById(id); if(el) el.style.width = pct+'%'; });
+  }
+
+  function bindClicks(root) {
+    root.querySelectorAll('.item').forEach(el => {
+      el.addEventListener('click', function(e) {
+        if (e.target.tagName === 'INPUT') return;
+        const inp = this.querySelector('input'); inp.checked = !inp.checked;
+        this.classList.toggle('checked');
+        toggle(this.dataset.id, inp.checked);
+      });
+      el.querySelector('input').addEventListener('change', function() {
+        el.classList.toggle('checked', this.checked);
+        toggle(el.dataset.id, this.checked);
+      });
+    });
+  }
+
+  function toggle(id, v) { v ? checked.add(id) : checked.delete(id); updateProgress(); debouncedSave(); }
+
+  function renderMobile() {
+    const container = document.getElementById('mobileListContainer');
+    const empty = document.getElementById('mobileEmpty');
+    const filtered = currentFilter === 'all' ? DATA : DATA.filter(d => d.cat === currentFilter);
+    const groups = {};
+    filtered.forEach(d => { if (!groups[d.group]) groups[d.group] = []; groups[d.group].push(d); });
+    let html = '';
+    Object.entries(groups).forEach(([gn, items]) => {
+      const cat = items[0].cat, cl = cat==='must'?'必帶':cat==='maybe'?'可帶可買':'當地買';
+      html += '<div class="section"><div class="section-header"><span class="section-dot '+cat+'"></span><span class="section-title">'+gn+'</span><span class="section-sub">'+cl+'</span></div><div class="item-list">'+items.map(d=>itemHtml(d)).join('')+'</div></div>';
+    });
+    container.innerHTML = html;
+    empty.classList.toggle('hidden', filtered.length > 0);
+    bindClicks(container);
+  }
+
+  function renderDesktop() {
+    const root = document.getElementById('desktopView');
+    const cols = [{k:'must',l:'必帶',d:'must'},{k:'maybe',l:'可帶可買',d:'maybe'},{k:'local',l:'當地買',d:'local'}];
+    let html = '<div class="desktop-grid">';
+    cols.forEach(c => {
+      const items = DATA.filter(d => d.cat === c.k);
+      const groups = {};
+      items.forEach(d => { if(!groups[d.group]) groups[d.group]=[]; groups[d.group].push(d); });
+      html += '<div class="col"><div class="col-header"><span class="col-dot '+c.d+'"></span><h2>'+c.l+'</h2><span class="col-count">'+items.length+'</span></div><div class="item-list">';
+      Object.entries(groups).forEach(([gn,gi]) => { html += '<div class="col-group">'+gn+'</div>'; gi.forEach(d=>{html+=itemHtml(d);}); });
+      html += '</div></div>';
+    });
+    html += '</div>';
+    root.innerHTML = html;
+    bindClicks(root);
+  }
+
+  function renderAll() { renderMobile(); renderDesktop(); updateProgress(); }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      this.classList.add('active'); currentFilter = this.dataset.filter; renderMobile();
+    });
+  });
+
+  renderAll();
+  loadFromServer();
+})();
+</script>
+</body>
+</html>
