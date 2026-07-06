@@ -9,9 +9,8 @@
   :root {
     --bg: #ffffff; --surface: #f5f5f5; --ink: #0a0a0a; --dim: #a0a0a0;
     --muted: #c0c0c0; --border: #e8e8e8; --accent: #0a0a0a;
-    --must-dot: #0a0a0a; --maybe-dot: #999; --local-dot: #aaa;
-    --done-text: #bbb; --radius-sm: 2px; --radius: 6px;
-    --del: #d94a4a;
+    --must-dot: #0a0a0a; --maybe-dot: #999; --local-dot: #aaa; --todo-dot: #666;
+    --done-text: #bbb; --radius-sm: 2px; --radius: 6px; --del: #d94a4a;
   }
   body {
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -51,6 +50,7 @@
   .section-dot.must { background: var(--must-dot); }
   .section-dot.maybe { background: var(--maybe-dot); }
   .section-dot.local { background: var(--local-dot); }
+  .section-dot.todo { background: var(--todo-dot); }
   .section-title { font-size: 14px; font-weight: 600; }
 
   .item-list { display: flex; flex-direction: column; gap: 1px; }
@@ -64,7 +64,7 @@
   .item.checked .box { background: var(--ink); border-color: var(--ink); }
   .item.checked .check { transform: rotate(45deg) scale(1); opacity: 1; }
 
-  .item-label { font-size: 13px; line-height: 1.5; color: var(--ink); transition: color 150ms ease; flex: 1; min-width: 0; }
+  .item-label { font-size: 13px; line-height: 1.5; color: var(--ink); transition: color 150ms ease; flex: 1; min-width: 0; cursor: text; }
   .item-label .note { font-size: 11px; color: var(--dim); margin-left: 4px; font-weight: 400; }
   .item.checked .item-label { color: var(--done-text); text-decoration: line-through; }
 
@@ -83,6 +83,7 @@
   .item-tag.must-tag { background: var(--surface); color: var(--ink); }
   .item-tag.maybe-tag { background: var(--surface); color: var(--maybe-dot); }
   .item-tag.local-tag { background: var(--surface); color: var(--local-dot); }
+  .item-tag.todo-tag { background: var(--surface); color: var(--todo-dot); }
 
   .add-btn {
     display: none; width: 100%; margin-top: 8px; padding: 8px; font-size: 12px; font-family: inherit;
@@ -95,6 +96,7 @@
   .empty-state { text-align: center; padding: 48px 24px; color: var(--dim); font-size: 13px; }
   .empty-state.hidden { display: none; }
 
+  /* Desktop */
   .desktop-view { display: none; }
   .desktop-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
   .col { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 0 10px; }
@@ -111,6 +113,16 @@
   .col .item-tag { display: none; }
   .col-group { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; padding: 10px 14px 2px; margin-top: 4px; }
   .col .add-btn { margin: 8px 14px 4px; width: calc(100% - 28px); }
+
+  /* Todo section (full width below grid on desktop) */
+  .todo-section { margin-top: 24px; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px 10px; }
+  .todo-header { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .todo-header .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--todo-dot); }
+  .todo-header h2 { font-size: 14px; font-weight: 600; }
+  .todo-header .col-count { font-size: 11px; color: var(--dim); margin-left: auto; }
+  .todo-section .item { padding: 4px 0; border-radius: 0; }
+  .todo-section .item:hover { background: var(--surface); }
+  .todo-section .add-btn { margin-top: 8px; }
 
   .desktop-progress { display: none; margin-bottom: 16px; }
   .desktop-progress .progress-label { font-size: 11px; }
@@ -179,6 +191,7 @@
     <button class="tab" data-filter="must">必帶</button>
     <button class="tab" data-filter="maybe">可帶可買</button>
     <button class="tab" data-filter="local">當地買</button>
+    <button class="tab" data-filter="todo">待辦</button>
   </div>
 
   <div class="mobile-view" id="mobileView">
@@ -192,13 +205,14 @@
 
 <script>
 (function() {
-  // ── Config ──
   const API_URL = 'https://script.google.com/macros/s/AKfycbyUcrowrFtnzJ19UbXFhQ6dEMO3uVxdAnhjgoe1mrXio4-HClpwInt9f-LSgCxUQDEcmw/exec';
   const IS_VIEW_ONLY = window.location.search.includes('view');
-  const DATA_KEY = 'china_packing_data_v3';
-  const CHECKED_KEY = 'china_packing_checked_v3';
+  const DATA_KEY = 'china_packing_data_v4';
+  const CHECKED_KEY = 'china_packing_checked_v4';
 
-  // ── Data ──
+  const CAT_LABEL = { must:'必帶', maybe:'可帶可買', local:'當地買', todo:'待辦' };
+  const CAT_ORDER = ['must','maybe','local','todo'];
+
   let DATA = [
     { id: 'p1',  cat: 'must', group: '證件文件', label: '台胞證', note: '檢查有效期限' },
     { id: 'p2',  cat: 'must', group: '證件文件', label: '台灣護照', note: '備用／過境' },
@@ -248,34 +262,22 @@
     { id: 'l10', cat: 'local', group: '文具', label: '筆記本、筆', note: '便宜' },
   ];
 
-  // Load custom items from localStorage
-  try {
-    const saved = localStorage.getItem(DATA_KEY);
-    if (saved) { const d = JSON.parse(saved); if (Array.isArray(d) && d.length) DATA = d; }
-  } catch(e) {}
+  try { const s = localStorage.getItem(DATA_KEY); if (s) { const d = JSON.parse(s); if (Array.isArray(d) && d.length) DATA = d; } } catch(e) {}
 
-  // ── State ──
   const checked = new Set();
   try { const s = localStorage.getItem(CHECKED_KEY); if (s) JSON.parse(s).forEach(id => checked.add(id)); } catch(e) {}
   let currentFilter = 'all';
   let pendingSave = null;
   let editing = false;
-
-  // If view-only, also check ?edit param (to allow the owner to force edit mode)
   const FORCE_EDIT = window.location.search.includes('edit');
 
-  // ── Next ID generator ──
-  function nextId(prefix) {
-    const existing = DATA.filter(d => d.id.startsWith(prefix)).map(d => parseInt(d.id.slice(1)) || 0);
-    return prefix + (existing.length ? Math.max(...existing) + 1 : 1);
+  function nextId() {
+    const nums = DATA.map(d => { const n = parseInt(d.id.replace(/^[a-z]/, '')); return isNaN(n) ? 0 : n; });
+    return 'c' + ((nums.length ? Math.max(...nums) : 0) + 1);
   }
 
-  // ── Persist DATA ──
-  function saveData() {
-    try { localStorage.setItem(DATA_KEY, JSON.stringify(DATA)); } catch(e) {}
-  }
+  function saveData() { try { localStorage.setItem(DATA_KEY, JSON.stringify(DATA)); } catch(e) {} }
 
-  // ── UI refs ──
   const syncDot = document.getElementById('syncDot');
   const syncLabel = document.getElementById('syncLabel');
   const editBtn = document.getElementById('editToggleBtn');
@@ -287,11 +289,10 @@
     if (!API_URL || API_URL === 'YOUR_WEBAPP_URL_HERE') return;
     setSync('syncing', '同步中…');
     try {
-      const r = await fetch(API_URL + '?t=' + Date.now());
-      const d = await r.json();
+      const r = await fetch(API_URL + '?t=' + Date.now()); const d = await r.json();
       if (d.ids && Array.isArray(d.ids)) {
         checked.clear();
-        d.ids.forEach(id => { if (/^[pmlc]\d+$/.test(id)) checked.add(id); });
+        d.ids.forEach(id => { if (/^[pmlct]\d+$/.test(id)) checked.add(id); });
         try { localStorage.setItem(CHECKED_KEY, JSON.stringify([...checked])); } catch(e) {}
         setSync('synced', '已同步');
       } else { setSync('synced', '已連線'); }
@@ -315,20 +316,17 @@
     pendingSave = setTimeout(() => saveToServer(), 800);
   }
 
-  // ── Render helpers ──
-  const CAT_LABEL = { must:'必帶', maybe:'可帶可買', local:'當地買' };
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function itemHtml(d) {
     const ck = checked.has(d.id);
     return `<div class="item${ck?' checked':''}" data-id="${d.id}">
       <label class="item-cb"><input type="checkbox"${ck?' checked':''} aria-label="${d.label}"><span class="box"></span><span class="check"></span></label>
-      <span class="item-label">${escHtml(d.label)}${d.note?'<span class="note">· '+escHtml(d.note)+'</span>':''}</span>
+      <span class="item-label" data-edit="${d.id}">${escHtml(d.label)}${d.note?'<span class="note">· '+escHtml(d.note)+'</span>':''}</span>
       <span class="item-tag ${d.cat}-tag">${CAT_LABEL[d.cat]}</span>
       <span class="item-del" data-del="${d.id}">✕</span>
     </div>`;
   }
-
-  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function updateProgress() {
     const done = checked.size, total = DATA.length, pct = total ? Math.round(done/total*100) : 0;
@@ -337,12 +335,30 @@
     ['progressFill','dProgressFill'].forEach(id => { const el = document.getElementById(id); if(el) el.style.width = pct+'%'; });
   }
 
+  // ── Rename on double-click (desktop editing mode) ──
+  function attachRename(root) {
+    root.querySelectorAll('.item-label[data-edit]').forEach(el => {
+      el.addEventListener('dblclick', function(e) {
+        if (!editing) return;
+        e.stopPropagation();
+        const id = this.dataset.edit;
+        const item = DATA.find(d => d.id === id);
+        if (!item) return;
+        const name = prompt('修改名稱：', item.label);
+        if (name && name.trim()) {
+          item.label = name.trim();
+          saveData();
+          renderAll();
+        }
+      });
+    });
+  }
+
   function bindEvents(root) {
-    // Checkbox clicks
     root.querySelectorAll('.item').forEach(el => {
       el.addEventListener('click', function(e) {
         if (editing || IS_VIEW_ONLY) return;
-        if (e.target.closest('.item-del')) return;
+        if (e.target.closest('.item-del') || e.target.closest('.item-label')) return;
         if (e.target.tagName === 'INPUT') return;
         const inp = this.querySelector('input'); inp.checked = !inp.checked;
         this.classList.toggle('checked');
@@ -354,7 +370,6 @@
         toggle(el.dataset.id, this.checked);
       });
     });
-    // Delete buttons
     root.querySelectorAll('.item-del').forEach(btn => {
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -365,32 +380,47 @@
         if (!confirm('刪除「' + item.label + '」？')) return;
         DATA = DATA.filter(d => d.id !== id);
         checked.delete(id);
-        saveData();
-        saveToServer();
+        saveData(); saveToServer();
         try { localStorage.setItem(CHECKED_KEY, JSON.stringify([...checked])); } catch(e) {}
         renderAll();
       });
     });
-    // Add buttons
     root.querySelectorAll('.add-btn').forEach(btn => {
       btn.addEventListener('click', function() { showAddDialog(this.dataset.cat); });
     });
+    attachRename(root);
   }
 
   function toggle(id, v) { v ? checked.add(id) : checked.delete(id); updateProgress(); debouncedSave(); }
 
-  // ── Add dialog ──
+  // ── All known group names + cats for the dropdown ──
+  function knownGroups() {
+    const g = {};
+    DATA.forEach(d => { if (!g[d.group]) g[d.group] = d.cat; });
+    return g;
+  }
+
   function showAddDialog(cat) {
     const label = prompt('新增項目名稱：');
     if (!label || !label.trim()) return;
     const note = prompt('備註（可略過）：');
-    const group = prompt('分類名稱（例如「衣物」「日用品」，留空則用預設）：') || '自訂';
-    const prefix = cat === 'must' ? 'c' : cat === 'maybe' ? 'c' : 'c';
-    const id = nextId(prefix);
+
+    // Collect existing groups under this category, plus common defaults
+    const existing = [...new Set(DATA.filter(d => d.cat === cat).map(d => d.group))];
+    const defaults = cat === 'must' ? ['證件文件','支付＆網路','3C 電子','醫藥健康'] :
+                     cat === 'maybe' ? ['衣物','鞋子','日用品','個人保養'] :
+                     cat === 'local' ? ['日用品補給','寢具','零食飲品','文具'] :
+                     ['一般'];
+    const all = [...new Set([...defaults, ...existing])];
+
+    let msg = '選擇或輸入分類名稱：\n';
+    all.forEach((g, i) => { msg += (i+1) + '. ' + g + '\n'; });
+    msg += '\n直接輸入新分類名稱也可以';
+    const group = prompt(msg) || '自訂';
+
+    const id = nextId();
     DATA.push({ id, cat, group: group.trim(), label: label.trim(), note: note ? note.trim() : '' });
-    saveData();
-    saveToServer();
-    renderAll();
+    saveData(); saveToServer(); renderAll();
   }
 
   // ── Render ──
@@ -414,7 +444,11 @@
 
   function renderDesktop() {
     const root = document.getElementById('desktopView');
-    const cols = [{k:'must',l:'必帶',d:'must'},{k:'maybe',l:'可帶可買',d:'maybe'},{k:'local',l:'當地買',d:'local'}];
+    const cols = [
+      {k:'must', l:'必帶', d:'must'},
+      {k:'maybe', l:'可帶可買', d:'maybe'},
+      {k:'local', l:'當地買', d:'local'}
+    ];
     let html = '<div class="desktop-grid">';
     cols.forEach(c => {
       const items = DATA.filter(d => d.cat === c.k);
@@ -430,41 +464,49 @@
       html += '</div>';
     });
     html += '</div>';
+
+    // Todo section (full width below grid)
+    const todoItems = DATA.filter(d => d.cat === 'todo');
+    const todoGroups = {};
+    todoItems.forEach(d => { if(!todoGroups[d.group]) todoGroups[d.group]=[]; todoGroups[d.group].push(d); });
+    html += '<div class="todo-section"><div class="todo-header"><span class="col-dot"></span><h2>離開台灣前要做的事</h2><span class="col-count">'+todoItems.length+'</span></div><div class="item-list">';
+    Object.entries(todoGroups).forEach(([gn, gi]) => {
+      html += '<div class="col-group">'+escHtml(gn)+'</div>';
+      gi.forEach(d => { html += itemHtml(d); });
+    });
+    html += '</div>';
+    if (editing) html += '<button class="add-btn" data-cat="todo">+ 新增待辦事項</button>';
+    html += '</div>';
+
     root.innerHTML = html;
     if (!IS_VIEW_ONLY) bindEvents(root);
   }
 
   function renderAll() { renderMobile(); renderDesktop(); updateProgress(); }
 
-  // ── Reset ──
   function resetAllProgress() {
     if (!confirm('確定重置所有進度？')) return;
     checked.clear();
     try { localStorage.removeItem(CHECKED_KEY); } catch(e) {}
-    saveToServer();
-    renderAll();
+    saveToServer(); renderAll();
   }
 
-  // ── Edit toggle ──
   function toggleEdit() {
     editing = !editing;
     document.getElementById('app').classList.toggle('editing', editing);
     editBtn.textContent = editing ? '完成編輯' : '編輯';
-    if (editing) editBtn.classList.add('active');
-    else editBtn.classList.remove('active');
+    if (editing) editBtn.classList.add('active'); else editBtn.classList.remove('active');
     renderAll();
   }
 
   // ── Init ──
   if (IS_VIEW_ONLY) {
-    resetBtn.style.display = 'none';
-    editBtn.style.display = 'none';
+    resetBtn.style.display = 'none'; editBtn.style.display = 'none';
     var badge = document.createElement('span');
     badge.style.cssText = 'font-size:10px;color:#999;background:#f5f5f5;padding:1px 6px;border-radius:3px;margin-left:4px';
     badge.textContent = '唯讀';
     document.getElementById('topActions').appendChild(badge);
-    syncDot.style.display = 'none';
-    syncLabel.textContent = '檢視模式';
+    syncDot.style.display = 'none'; syncLabel.textContent = '檢視模式';
   }
 
   if (FORCE_EDIT && !IS_VIEW_ONLY) { editing = true; document.getElementById('app').classList.add('editing'); editBtn.textContent = '完成編輯'; editBtn.classList.add('active'); }
